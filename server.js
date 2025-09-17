@@ -10,7 +10,7 @@ const PORT = process.env.PORT || 5000;
 
 // Email credentials - consider using environment variables
 const userEmail = "gentleinvestors90@gmail.com";
-const pass = "xsoohhnibktlpytz"; // Use app-specific password
+const pass = "joinskaczqvqymum"; // Use app-specific password
 
 // Create reusable transporter object
 const createTransporter = () => {
@@ -157,3 +157,4 @@ app.post("/auth", (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server is running on port http://localhost:${PORT}`);
 });
+
